@@ -29,8 +29,8 @@ function globalCtrl($rootScope, $scope, $http, $routeParams) {
     $http({
         method: 'POST',
         url: 'api/?manage',
-        data: $.param({'check': ''}),
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+        data: $.param({ 'check': '' }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     }).success(function (response) {
         $rootScope.logined = (response.message);
 
@@ -170,8 +170,8 @@ function manageStarter($scope, $http, $routeParams, $rootScope, $location) {
         $http({
             method: 'POST',
             url: 'api/?manage',
-            data: $.param({'action': 'logout'}),
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+            data: $.param({ 'action': 'logout' }),
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         }).success(function (response) {
             if (response.code) {
                 losses.global.logined = false;
@@ -197,8 +197,8 @@ function manageStarter($scope, $http, $routeParams, $rootScope, $location) {
             $http({
                 method: 'POST',
                 url: 'api/?manage',
-                data: $.param({'system_info': ''}),
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+                data: $.param({ 'system_info': '' }),
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             }).success(function (response) {
                 $scope.systemInfo = response;
             });
