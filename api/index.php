@@ -1,18 +1,23 @@
 <?php
-    //NOTICE: DO NOT EDIT THE 'MB_VERSION' BASED ON ANY REASON, IT MAY CAUSE THE UPDATER WORK IN AN ABNORMAL WAY!
+//NOTICE: DO NOT EDIT THE 'MB_VERSION' BASED ON ANY REASON, IT MAY CAUSE THE UPDATER WORK IN AN ABNORMAL WAY!
     define('MB_VERSION', '0.9 PreAlpha');
 
     require_once('../config.php');
+
     require_once('../libs/medoo.php');
+
     require_once('../libs/emotions.php');
+
     require_once('../libs/plugin.php');
+
     require_once('../libs/remove_xss.php');
 
     $emotion = new emotions();
 
     $plugin = new plugin();
 
-    $database = new medoo(
+    $database = new medoo
+    (
         [
             'database_type' => 'mysql',
             'database_name' => DB_NAME,
@@ -22,7 +27,8 @@
             'port'          => DB_PORT,
             'charset'       => 'utf8',
             'option'        => [PDO::ATTR_CASE => PDO::CASE_NATURAL]
-        ]);
+        ]
+    );
 
     $columns_sql = [];
     $where_sql   = [];
@@ -38,15 +44,14 @@
 
     if (isset($_GET['new']))
     {
-        $post_title   = isset($_POST['title'])      ? $_POST['title']    : '';
-        $post_content = isset($_POST['content'])    ? $_POST['content']  : '';
-        $post_upid    = isset($_POST['upid'])       ? $_POST['upid']     : 0;
-        //! BUG: $post_sage==1 when $_POST['sage']==0
-        $post_sage    = isset($_POST['sage'])       ? 1                  : 0;
-        $post_cate    = isset($_POST['category'])   ? $_POST['category'] : 0;
-        $post_ip      = get_ip_address();
-        $post_author  = (isset($_SESSION['logined'])
-            && $_SESSION['logined'] == true)        ? 'Admin'            : 'a person';
+        $post_title = isset($_POST['title'])     ? $_POST['title']    : '';
+        $post_content = isset($_POST['content']) ? $_POST['content']  : '';
+        $post_upid = isset($_POST['upid'])       ? $_POST['upid']     : 0;
+        $post_sage = isset($_POST['sage'])       ? 1                  : 0;
+        $post_cate = isset($_POST['category'])   ? $_POST['category'] : 0;
+        $post_ip = get_ip_address();
+        $post_author = (isset($_SESSION['logined'])
+            && $_SESSION['logined'] == true)     ? 'Admin'            : 'a person';
 
         $plugin->load_hook("HOOK-BEFORE_NEW");
 
@@ -55,7 +60,6 @@
             if ($post_title == '')
             {
                 response_message(403, "You need a title!");
-                //! Unreachable code.
                 exit();
             }
             if ($post_content == '')
@@ -102,12 +106,8 @@
                     move_uploaded_file($_FILES['image']['tmp_name'],
                         '../upload/' . $_FILES['image']['name']);
 
-                    //? No need '../upload/' here
-                    //? Double meaning of `$type_img`
                     $type_img = explode('.', '../upload/'
                         . $_FILES['image']['name']);
-                    //? why adds time in filename hash?
-                    //? Or same images doesn't waste storage space.
                     $post_img = md5(md5_file('../upload/'
                         . $_FILES['image']['name'])
                         . date('Y-m-d H:i:s')) . '.'
@@ -124,7 +124,6 @@
 
         $columns_sql = ['mute'];
         $where_sql = ['id[=]' => $post_cate];
-        //? Can use `select('category', 'mute', $where_sql)[0] === '1'` here
         $is_mute = $database->select('category',
             $columns_sql, $where_sql)[0]['mute'] === '1';
         if ($is_mute && (!isset($_SESSION['logined'])
@@ -180,7 +179,6 @@
         [
             'AND'   =>  ['content.upid[=]' => 0],
             'ORDER' =>  ['content.active_time DESC', 'content.time DESC'],
-            //! page is starting at 1, then you need to do `page - 1`
             'LIMIT' =>  [($_GET['page'] - 1) * 10, 10],
         ];
         if (!isset($_SESSION['logined']) || $_SESSION['logined'] == false)
@@ -191,8 +189,6 @@
         {
             $where_sql['AND']['content.category[=]'] = (int)$_GET['category'];
         }
-        //? My Question: How PHP resolves `select(string, array, array)`
-        //? between `select($table, $columns, $where)` and `select($table, $join, $columns)`?
         $data = $database->select('content', $join_sql, $columns_sql, $where_sql);
 
         $plugin->load_hook("HOOK-AFTER_LIST");
@@ -208,8 +204,6 @@
 
         $search_key = explode(' ', $_GET['search']);
         $result_key = '';
-        //! PHP allows to convert `NULL` to `int` and it returns `0`, Why not do this everywhere?
-        //? So you can do `$page_start = (int)$_GET['page'] * 10` if page index starts at 0
         $page_start = isset($_GET['page']) ? (((int)$_GET['page'] - 1) * 10) : 0;
 
         foreach ($search_key as $key)
@@ -218,15 +212,13 @@
         }
         $search_key = $database->quote($result_key);
 
-        // Note: `fetchAll()` may return empty array, you can skip following process.
         $data = $database->query("
-            SELECT * FROM content
-            WHERE MATCH (title, content)
-            AGAINST ($search_key IN BOOLEAN MODE)
-            LIMIT $page_start, 10
-        ")->fetchAll();
+                                    SELECT * FROM content
+                                    WHERE MATCH (title, content)
+                                    AGAINST ($search_key IN BOOLEAN MODE)
+                                    LIMIT $page_start, 10
+                                ")->fetchAll();
 
-        //? if(!$_SESSION['logined'])
         if (!isset($_SESSION['logined']) || $_SESSION['logined'] == false)
         {
             for ($i = 0; $i < count($data); $i++)
@@ -241,17 +233,14 @@
                     $data[$i] = null;
                 }
             }
-            //? What?
             if ($data[0] == null)
             {
-                //! Error: `$data` may be null.
                 $data = null;
             }
         }
 
         $search_result = [];
 
-        //! Error: `foreach (null as $value)` will throw an exception.
         foreach ($data as $result)
         {
             if ($result['upid'] == 0)
@@ -266,7 +255,6 @@
 
         foreach ($search_result as $result)
         {
-            //? What?
             if (isset($result['reply']) && !isset($result['post']))
             {
                 $search_result[$result['reply'][0]['upid']] =
@@ -360,7 +348,6 @@
         $data_length = count($data);
         for ($i = 0; $i < $data_length; $i++)
         {
-            //! Why not `RemoveXSS()` when adding to database?
             $data[$i]['content'] =
                 $emotion->phrase(RemoveXSS($Parsedown->text($data[$i]['content'])));
 
@@ -417,7 +404,6 @@
 
         if (isset($_SESSION['logined']) && $_SESSION['logined'] == true)
         {
-            //! Tests `isset()` once, uses `else if`.
             if (isset($_POST['action']) && ($_POST['action'] == 'delete'))
             {
                 $data_false = [];
@@ -587,7 +573,7 @@
 
             if (isset($_POST['action']) && ($_POST['action'] == 'rename_cate'))
             {
-                //? $database->has('category', [ 'name' => $_POST['name'] ]);
+
                 $data = $database->select('category', 'name');
                 foreach ($data as $result)
                 {
@@ -656,7 +642,6 @@
 
             if (isset($_POST['system_info']))
             {
-                //! Already tested log in status.
                 if (!$_SESSION['logined'])
                     response_message(403,
                         'You do not have the permission to access these information.');
@@ -684,11 +669,10 @@
         }
         else if (isset($_GET['name']) && isset($_GET['type']))
         {
-            $plugin->load_plugin_file($_GET['name'], $_GET['type']);
+            $plugin->load_plugin_file($_GET['name'],$_GET['type']);
         }
     }
 
-    //! All API responses should be wrapped by this method.
     function response_message($Code, $Message)
     {
         $Response =
@@ -724,7 +708,6 @@
         {
             $ipaddress = getenv('HTTP_FORWARDED');
         }
-        //! Also saves `$_SERVER['REMOTE_ADDR']` because client might spoof you with fake HTTP header.
         else if (getenv('REMOTE_ADDR'))
         {
             $ipaddress = getenv('REMOTE_ADDR');
