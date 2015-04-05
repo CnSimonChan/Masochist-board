@@ -39,19 +39,21 @@ mKnowledge.config(['$controllerProvider', '$routeProvider',
                 templateUrl: 'partials/manage.html',
                 controller: manageStarter
             }).
-            when('/:pluginAction', {
+            when('/:pluginAction*', {
                 controller: 'pluginCtrl$pluginPageCtrl',
                 resolve: {
                     load: ['$q', '$route', '$rootScope', '$location',
-                        function ($q, $route) {
+                        function ($q, $route, $rootScope) {
                             var deferred = $q.defer(),
-                                params = $route.current.params;
+                                params = $route.current.params.pluginAction.split('/');
 
-                            $.getScript('api/?plugin&name=' + params.pluginAction + '&type=script')
+                            $rootScope.routeSplited = params;
+
+                            $.getScript('api/?plugin&name=' + params[0] + '&type=script')
                                 .always(function (result, state) {
                                     if (state === 'error' || state === 'parsererror') {
-                                        var url = 'api/?plugin&name=' + params.pluginAction + '&type=script';
-                                        console.report('Load script: ' + url + ' failed', params);
+                                        var url = 'api/?plugin&name=' + params[0] + '&type=script';
+                                        console.report('Load script: ' + url + ' failed', params[0]);
                                     }
                                     deferred.resolve();
                                 });
@@ -60,7 +62,7 @@ mKnowledge.config(['$controllerProvider', '$routeProvider',
                         }]
                 },
                 templateUrl: function (params) {
-                    return 'api/?plugin&name=' + params.pluginAction + '&type=html';
+                    return 'api/?plugin&name=' + params.pluginAction.split('/')[0] + '&type=html';
                 }
             });
     }
@@ -91,6 +93,12 @@ mKnowledge.filter('object2Array', function () {
             output.push(input[i]);
         }
         return output;
+    }
+});
+
+mKnowledge.filter('startFrom', function () {
+    return function (input, start) {
+        return input.slice(start);
     }
 });
 
@@ -207,7 +215,6 @@ function sSelect(selector) {
             });
 
             selectBody.delegate('li', 'click', function () {
-                console.log('!');
                 var selectObject = $(this).parents('.s_select').children('input');
                 selectObject.val($(this).attr('val'))
                     .next('.s_choosen').html($(this).html());
@@ -321,7 +328,7 @@ $(document).ready(function documentReady() {
 
     (function lightBox() {
         /*lightbox*/
-        $('body').append('<section class="lightbox"><div class="darkness"><img src="" class="image" /></section>')
+        $('#common').after('<section class="lightbox"><div class="darkness"><img src="" class="image" /></section>')
             .delegate('.lbox', 'click', function () {
                 var scale = 1;
 
@@ -410,20 +417,6 @@ $(document).ready(function documentReady() {
                 });
             });
     })();
-
-    /*
-     switchLoading(true);
-
-     $.post('api/?manage', {'check': ''}, function (data) {
-     switchLoading(false);
-     var response = JSON.parse(data);
-
-     losses.global.logined = (response.message);
-     losses.global.$digest();
-
-     manageLoginProcess();
-     });
-     */
 
     $(window).resize(checkFunctionMenu);
 
